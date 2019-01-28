@@ -18,6 +18,14 @@ $dotenv->load();
 $app = new Application();
 $app['debug'] = true;
 
+$app->get('/', function (Request $request) use ($app) {
+
+	$client_id = clientId();
+	$client_secret = clientSecret();
+	$redirect_uri =callbackUrl();
+	return "Client ID: {$client_id} | Client Secret: {$client_secret} | Redirect URL: {$redirect_uri}";
+});
+
 $app->get('/load', function (Request $request) use ($app) {
 
 	$data = verifySignedRequest($request->get('signed_payload'));
