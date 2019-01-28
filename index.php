@@ -20,10 +20,11 @@ $app['debug'] = true;
 
 $app->get('/', function (Request $request) use ($app) {
 
-	$client_id = clientId();
-	$client_secret = clientSecret();
-	$redirect_uri =callbackUrl();
-	return "Client ID: {$client_id} | Client Secret: {$client_secret} | Redirect URL: {$redirect_uri}";
+	$redis = redisServer();
+	$redis->set("redis-works", "true");
+	$redis_con = $redis->get("redis-works");
+
+	return "Redis: {$redis_con}";
 });
 
 $app->get('/load', function (Request $request) use ($app) {
@@ -32,7 +33,7 @@ $app->get('/load', function (Request $request) use ($app) {
 	if (empty($data)) {
 		return 'Invalid signed_payload.';
 	}
-	$redis = new Credis_Client('localhost');
+	$redis = redisServer();
 	$key = getUserKey($data['store_hash'], $data['user']['email']);
 	$user = json_decode($redis->get($key), true);
 	if (empty($user)) {
@@ -43,7 +44,7 @@ $app->get('/load', function (Request $request) use ($app) {
 });
 
 $app->get('/auth/callback', function (Request $request) use ($app) {
-	$redis = new Credis_Client('localhost');
+	$redis = redisServer();
 
 	$payload = array(
 		'client_id' => clientId(),
@@ -85,7 +86,7 @@ $app->get('/remove-user', function(Request $request) use ($app) {
 	}
 
 	$key = getUserKey($data['store_hash'], $data['user']['email']);
-	$redis = new Credis_Client('localhost');
+	$redis = redisServer();
 	$redis->del($key);
 	return '[Remove User] '.$data['user']['email'];
 });
@@ -124,7 +125,7 @@ $app->get('/storefront/{storeHash}/customers/{jwtToken}/recently_purchased.html'
  */
 function getRecentlyPurchasedProductsHtml($storeHash, $customerId)
 {
-	$redis = new Credis_Client('localhost');
+	$redis = redisServer();
 	$cacheKey = "stores/{$storeHash}/customers/{$customerId}/recently_purchased_products.html";
 	$cacheLifetime = 60 * 5; // Set a 5 minute cache lifetime for this HTML block.
 
@@ -190,7 +191,7 @@ function configureBCApi($storeHash)
  */
 function getAuthToken($storeHash)
 {
-	$redis = new Credis_Client('localhost');
+	$redis = redisServer();
 	$authData = json_decode($redis->get("stores/{$storeHash}/auth"));
 	return $authData->access_token;
 }
@@ -264,9 +265,45 @@ function bcAuthService()
 	return $bcAuthService ?: '';
 }
 
+//redis-cli -h redis-10749.c52.us-east-1-4.ec2.cloud.redislabs.com -p 10749 -a LlGFiQUmEOYPVOEWNyrQT8YkkhKkMdSb
+function redisHost()
+{
+	$host = getenv('REDIS_HOST');
+	return $host ?: '127.0.0.1';
+}
+
+function redisPort()
+{
+	$port = getenv('REDIS_PORT');
+	return $port ?: '6379';
+}
+
+function redisPassword()
+{
+	$password = getenv('REDIS_PASSWORD');
+	return $password ?: null;
+}
+
+function redisDatabase()
+{
+	$password = getenv('REDIS_DATABASE');
+	return $password ?: '0';
+}
+
 function getUserKey($storeHash, $email)
 {
 	return "kitty.php:$storeHash:$email";
+}
+
+function redisServer()
+{
+	$redis_host = redisHost();
+	$redis_port = redisPort();
+	$redis_password = redisPassword();
+	$redis_database = redisDatabase();
+
+	$redis = new Credis_Client($redis_host, $redis_port, null, "none", $redis_database, $redis_password);
+	return $redis;
 }
 
 $app->run();
