@@ -54,6 +54,14 @@ $app->get('/', function (Request $request) use ($app) {
 
 	return $app['twig']->render('form.twig', array('data' => $data));
 });
+
+$app->get('/blog/{id}', function (Silex\Application $app, $id) {
+	$sql = "SELECT * FROM cms_block WHERE id = ?";
+	$post = $app['db']->fetchAssoc($sql, array((int) $id));
+
+	return  $post['content'];
+});
+
 $app->post('/save', function (Request $request) use ($app) {
 	$id =1 ;
 	$title = $request->get('title');
@@ -76,7 +84,15 @@ $app->get('/load', function (Request $request) use ($app) {
 		$user = $data['user'];
 		$redis->set($key, json_encode($user, true));
 	}
-	return 'Welcome ' . json_encode($user, true);
+	/**/
+	$id = 1;
+	$sql = "SELECT * FROM cms_block WHERE id = ?";
+	$post = $app['db']->fetchAssoc($sql, array((int) $id));
+
+	$data = ['title' => $post['title'], 'content' => $post['content']];
+
+	return $app['twig']->render('form.twig', array('data' => $data));
+	/**/
 });
 
 $app->get('/auth/callback', function (Request $request) use ($app) {
