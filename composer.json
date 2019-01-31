@@ -8,6 +8,13 @@
     "vlucas/phpdotenv": "~2.4",
     "firebase/php-jwt": "~4.0",
     "bigcommerce/api": "~3.0",
-    "xamin/handlebars.php": "~0.10"
+    "xamin/handlebars.php": "~0.10",
+    "doctrine/dbal": "~2.2",
+    "symfony/form": "2.*",
+    "symfony/twig-bridge": "2.*",
+    "symfony/security": "2.*",
+    "symfony/translation": "2.*",
+    "symfony/config": "^4.2",
+    "symfony/security-csrf": "2.*"
   }
 }

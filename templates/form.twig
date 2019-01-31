@@ -1,0 +1,38 @@
+<form action="/action_page.php" style="background-color: honeydew">
+    <label>Title</label>
+    <br/>
+    <input type="text" name="title" value="{{ data['title'] }}">
+    <br>
+    <label>Content</label>
+    <br>
+    <textarea rows="10" cols="28" name="content">{{ data['content'] }}</textarea>
+    <br><br>
+    <input type="submit" value="Submit">
+</form>
+<div style="background-color: aliceblue">
+    <h1>{{ data['title']|raw}}</h1>
+    <br>
+    {{ data['content']|raw }}
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        $( "form" ).on( "submit", function( event ) {
+            event.preventDefault();
+            var datastring = $( this ).serialize();
+            $.ajax({
+                type: "POST",
+                url: "save",
+                data: datastring,
+                dataType: "json",
+                success: function(data) {
+                    location.reload();
+                },
+                error: function() {
+                    alert('error handling here');
+                }
+            });
+        });
+    });
+</script>
+

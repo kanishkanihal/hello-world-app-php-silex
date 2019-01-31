@@ -9,6 +9,14 @@ use Handlebars\Handlebars;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Silex\Provider\FormServiceProvider;
+/*use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Silex\Provider\TwigServiceProvider;
+use Symfony\Bridge\Twig;
+use Silex\Provider\SecurityServiceProvider;*/
+
 
 
 // Load from .env file
@@ -18,15 +26,43 @@ $dotenv->load();
 $app = new Application();
 $app['debug'] = true;
 
+$app->register(new FormServiceProvider());
+$app->register(new Silex\Provider\TwigServiceProvider(), array(
+	'twig.path' => __DIR__.'/templates',
+	'twig.class_path' => __DIR__ . '/vendor/twig/lib',
+));
+
+
+
+$app->register(new Silex\Provider\DoctrineServiceProvider(), array(
+	'db.options' => array (
+		'driver'    => 'pdo_mysql',
+		'host'      => mysqlHost(),
+		'dbname'    => mysqlDatabase(),
+		'user'      => mysqlUser(),
+		'password'  => mysqlPassword(),
+		'charset'   => 'utf8mb4',
+	),
+));
+
 $app->get('/', function (Request $request) use ($app) {
+	$id = 1;
+	$sql = "SELECT * FROM cms_block WHERE id = ?";
+	$post = $app['db']->fetchAssoc($sql, array((int) $id));
 
-	$redis = redisServer();
-	$redis->set("redis-works", "true");
-	$redis_con = $redis->get("redis-works");
+	$data = ['title' => $post['title'], 'content' => $post['content']];
 
-	return "Redis: {$redis_con}";
+	return $app['twig']->render('form.twig', array('data' => $data));
 });
+$app->post('/save', function (Request $request) use ($app) {
+	$id =1 ;
+	$title = $request->get('title');
+	$content = $request->get('content');
 
+	$sql = "UPDATE `cms_block` SET `title` = ?, `content` = ? WHERE `cms_block`.`id` = ?;";
+	$app['db']->executeUpdate($sql, array($title,$content, (int) $id));
+	return new Response(json_encode(['status'=> 'success']), 200);
+});
 $app->get('/load', function (Request $request) use ($app) {
 
 	$data = verifySignedRequest($request->get('signed_payload'));
@@ -265,7 +301,7 @@ function bcAuthService()
 	return $bcAuthService ?: '';
 }
 
-//redis-cli -h redis-10749.c52.us-east-1-4.ec2.cloud.redislabs.com -p 10749 -a LlGFiQUmEOYPVOEWNyrQT8YkkhKkMdSb
+//Redis
 function redisHost()
 {
 	$host = getenv('REDIS_HOST');
@@ -293,6 +329,31 @@ function redisDatabase()
 function getUserKey($storeHash, $email)
 {
 	return "kitty.php:$storeHash:$email";
+}
+
+//Mysql
+function mysqlHost()
+{
+	$host = getenv('MYSQL_HOST');
+	return $host ?: 'localhost';
+}
+
+function mysqlUser()
+{
+	$port = getenv('MYSQL_USER');
+	return $port ?: 'root';
+}
+
+function mysqlPassword()
+{
+	$password = getenv('MYSQL_PASSWORD');
+	return $password ?: null;
+}
+
+function mysqlDatabase()
+{
+	$password = getenv('MYSQL_DATABASE');
+	return $password ?: '0';
 }
 
 function redisServer()
