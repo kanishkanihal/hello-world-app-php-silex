@@ -59,7 +59,9 @@ $app->get('/blog/{id}', function (Silex\Application $app, $id) {
 	$sql = "SELECT * FROM cms_block WHERE id = ?";
 	$post = $app['db']->fetchAssoc($sql, array((int) $id));
 
-	return  $post['content'];
+	$headers = ['Access-Control-Allow-Origin' => '*'];
+
+	return  $response = new Response($post['content'], 200, $headers);;
 });
 
 $app->post('/save', function (Request $request) use ($app) {
